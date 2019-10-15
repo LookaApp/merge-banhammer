@@ -10,8 +10,13 @@ import (
 )
 
 func main() {
-	listenAddress := "localhost:1337"
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
+	listenAddress := os.Getenv("MERGEBAN_LISTEN_ADDR")
+	if listenAddress == "" {
+		logger.Fatalf("Was not supplied with required environment variable MERGEBAN_LISTEN_ADDR\n")
+	}
+
 	banService := mergeban.CreateService(logger)
 
 	httpServer := http.Server{
