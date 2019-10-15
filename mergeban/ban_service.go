@@ -20,7 +20,7 @@ func CreateBanService() *banService {
 }
 
 type BanHammer interface {
-	Ban(w *http.ResponseWriter, r *http.Request)
+	Ban(w http.ResponseWriter, r *http.Request)
 }
 
 func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
