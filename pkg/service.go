@@ -49,8 +49,8 @@ func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("user_id")
 
 	w.WriteHeader(200)
-
 	_, err = w.Write([]byte(b.withdrawMerge(userID)))
+
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
 	}
@@ -79,21 +79,21 @@ func (b *banService) enqueueMerge(userID string) string {
 	b.mergeQueue.Enqueue(userID)
 
 	if b.mergeQueue.Length() == 1 {
-		return "You have the merge banhammer!"
+		return "You have banned merges!"
 	} else if b.mergeQueue.Length() == originalLength {
 		usersCurrentPosition := b.mergeQueue.FindIndex(userID) + 1
 		return fmt.Sprintf("You are already in line! Your position: [%v/%v]\n", usersCurrentPosition, b.mergeQueue.Length())
 	}
 
-	return fmt.Sprintf("The banhammer has already been taken. Your position: [%v/%v]\n", b.mergeQueue.Length(), b.mergeQueue.Length())
+	return fmt.Sprintf("Hold up - someone else has banned merges. We'll message you when it's your turn to merge. Your position in line: [%v/%v]\n", b.mergeQueue.Length(), b.mergeQueue.Length())
 }
 
 func (b *banService) withdrawMerge(userID string) string {
 	withdrawnUserID := b.mergeQueue.Withdraw(userID)
 
 	if withdrawnUserID == nil {
-		return "You do not have the banhammer!"
+		return "You aren't in line!"
 	}
 
-	return "You no longer have the banhammer!"
+	return "You are no longer waiting to merge."
 }

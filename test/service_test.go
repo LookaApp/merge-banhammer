@@ -26,7 +26,7 @@ func TestBanEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, 200, response.StatusCode)
-		assert.Equal(t, "You have the merge banhammer!", string(responseBody))
+		assert.Equal(t, "You have banned merges!", string(responseBody))
 	})
 
 	t.Run("/ban - queueing to acquire lock if it has already been taken", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestBanEndpoint(t *testing.T) {
 		responseBody2, _ := ioutil.ReadAll(response2.Body)
 
 		assert.Equal(t, 200, response2.StatusCode)
-		assert.Equal(t, "The banhammer has already been taken. Your position: [2/2]\n", string(responseBody2))
+		assert.Equal(t, "Hold up - someone else has banned merges. We'll message you when it's your turn to merge. Your position in line: [2/2]\n", string(responseBody2))
 	})
 
 	t.Run("/ban - preventing the same user from enqueuing twice", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestLiftEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, 200, response.StatusCode)
-		assert.Equal(t, "You do not have the banhammer!", string(responseBody))
+		assert.Equal(t, "You aren't in line!", string(responseBody))
 	})
 
 	t.Run("/lift - releases any locks held by this user", func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestLiftEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(liftResponse.Body)
 
 		assert.Equal(t, 200, liftResponse.StatusCode)
-		assert.Equal(t, "You no longer have the banhammer!", string(responseBody))
+		assert.Equal(t, "You are no longer waiting to merge.", string(responseBody))
 	})
 }
 
