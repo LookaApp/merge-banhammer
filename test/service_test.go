@@ -64,7 +64,7 @@ func TestBanEndpoint(t *testing.T) {
 }
 
 func TestLiftEndpoint(t *testing.T) {
-	t.Run("/lift - no-op when the lock is not held by this user", func(t *testing.T) {
+	t.Run("/lift - warns when the lock is not held by this user", func(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		banService := mergeban.CreateService(logger)
 		w, request := createLiftRequest("42")
@@ -75,6 +75,22 @@ func TestLiftEndpoint(t *testing.T) {
 
 		assert.Equal(t, 200, response.StatusCode)
 		assert.Equal(t, "You do not have the banhammer!", string(responseBody))
+	})
+
+	t.Run("/lift - releases any locks held by this user", func(t *testing.T) {
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		banService := mergeban.CreateService(logger)
+
+		wBan, banRequest := createBanRequest("42")
+		wLift, liftRequest := createLiftRequest("42")
+
+		banService.ServeHTTP(wBan, banRequest)
+		banService.ServeHTTP(wLift, liftRequest)
+		liftResponse := wLift.Result()
+		responseBody, _ := ioutil.ReadAll(liftResponse.Body)
+
+		assert.Equal(t, 200, liftResponse.StatusCode)
+		assert.Equal(t, "You no longer have the banhammer!", string(responseBody))
 	})
 }
 

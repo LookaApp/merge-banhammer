@@ -46,9 +46,11 @@ func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
 		b.logger.Printf("Failed to parse form data from POST request: %v\n", err)
 	}
 
+	userID := r.FormValue("user_id")
+
 	w.WriteHeader(200)
 
-	_, err = w.Write([]byte("You do not have the banhammer!"))
+	_, err = w.Write([]byte(b.dequeueMerge(userID)))
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
 	}
@@ -87,4 +89,21 @@ func (b *banService) enqueueMerge(userID string) string {
 	}
 
 	return fmt.Sprintf("The banhammer has already been taken. Your position: [%v/%v]\n", queueLength+1, queueLength+1)
+}
+
+func (b *banService) dequeueMerge(userID string) string {
+	userPosition := int(-1)
+
+	for position, enqueuedID := range b.mergeQueue {
+		if enqueuedID == userID {
+			userPosition = position
+		}
+	}
+
+	if userPosition == -1 {
+		return "You do not have the banhammer!"
+	}
+
+	copy(b.mergeQueue[userPosition:], b.mergeQueue[userPosition+1:])
+	return "You no longer have the banhammer!"
 }
