@@ -9,13 +9,13 @@ import (
 
 type banService struct {
 	logger     *log.Logger
-	mergeQueue []string
+	mergeQueue *mergeQueue
 }
 
 func CreateService(logger *log.Logger) *banService {
 	return &banService{
 		logger:     logger,
-		mergeQueue: make([]string, 0, 12),
+		mergeQueue: NewQueue(),
 	}
 }
 
@@ -50,7 +50,7 @@ func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 
-	_, err = w.Write([]byte(b.dequeueMerge(userID)))
+	_, err = w.Write([]byte(b.withdrawMerge(userID)))
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
 	}
@@ -74,36 +74,26 @@ func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *banService) enqueueMerge(userID string) string {
-	queueLength := len(b.mergeQueue)
+	originalLength := b.mergeQueue.Length()
 
-	for position, enqueuedID := range b.mergeQueue {
-		if enqueuedID == userID {
-			return fmt.Sprintf("You are already in line! Your position: [%v/%v]\n", position+1, queueLength)
-		}
-	}
+	b.mergeQueue.Enqueue(userID)
 
-	b.mergeQueue = append(b.mergeQueue, userID)
-
-	if queueLength == 0 {
+	if b.mergeQueue.Length() == 1 {
 		return "You have the merge banhammer!"
+	} else if b.mergeQueue.Length() == originalLength {
+		usersCurrentPosition := b.mergeQueue.FindIndex(userID) + 1
+		return fmt.Sprintf("You are already in line! Your position: [%v/%v]\n", usersCurrentPosition, b.mergeQueue.Length())
 	}
 
-	return fmt.Sprintf("The banhammer has already been taken. Your position: [%v/%v]\n", queueLength+1, queueLength+1)
+	return fmt.Sprintf("The banhammer has already been taken. Your position: [%v/%v]\n", b.mergeQueue.Length(), b.mergeQueue.Length())
 }
 
-func (b *banService) dequeueMerge(userID string) string {
-	userPosition := int(-1)
+func (b *banService) withdrawMerge(userID string) string {
+	withdrawnUserID := b.mergeQueue.Withdraw(userID)
 
-	for position, enqueuedID := range b.mergeQueue {
-		if enqueuedID == userID {
-			userPosition = position
-		}
-	}
-
-	if userPosition == -1 {
+	if withdrawnUserID == nil {
 		return "You do not have the banhammer!"
 	}
 
-	copy(b.mergeQueue[userPosition:], b.mergeQueue[userPosition+1:])
 	return "You no longer have the banhammer!"
 }

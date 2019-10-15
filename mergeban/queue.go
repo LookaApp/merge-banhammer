@@ -67,6 +67,16 @@ func (q *mergeQueue) Withdraw(valueToWithdraw string) *string {
 	return &withdrawnValue
 }
 
+func (q *mergeQueue) FindIndex(needle string) int {
+	for index, enqueuedValue := range q.queue {
+		if enqueuedValue == needle {
+			return index
+		}
+	}
+
+	return -1
+}
+
 func (q *mergeQueue) Entries() []string {
 	return q.queue
 }

@@ -88,17 +88,6 @@ func TestQueue(t *testing.T) {
 		assert.Nil(t, withdrawnValue)
 	})
 
-	t.Run("withdraw - removes the provided value from a singleton queue", func(t *testing.T) {
-		queue := mergeban.NewQueue()
-
-		queue.Enqueue("1")
-		withdrawnValue := queue.Withdraw("1")
-		entries := queue.Entries()
-
-		assert.Equal(t, 0, len(entries))
-		assert.Equal(t, "1", *withdrawnValue)
-	})
-
 	t.Run("withdraw - does nothing if the provided value is not present in the queue", func(t *testing.T) {
 		queue := mergeban.NewQueue()
 
@@ -109,6 +98,17 @@ func TestQueue(t *testing.T) {
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, "1", entries[0])
 		assert.Nil(t, withdrawnValue)
+	})
+
+	t.Run("withdraw - removes the provided value from a singleton queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		withdrawnValue := queue.Withdraw("1")
+		entries := queue.Entries()
+
+		assert.Equal(t, 0, len(entries))
+		assert.Equal(t, "1", *withdrawnValue)
 	})
 
 	t.Run("withdraw - can withdraw from the head of the queue", func(t *testing.T) {
@@ -154,5 +154,26 @@ func TestQueue(t *testing.T) {
 		assert.Equal(t, "3", *withdrawnValue)
 		assert.Equal(t, "1", entries[0])
 		assert.Equal(t, "2", entries[1])
+	})
+
+	t.Run("findIndex - returns -1 if the provided entry is not present in the queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		index := queue.FindIndex("42")
+
+		assert.Equal(t, -1, index)
+	})
+
+	t.Run("findIndex - the index of the provided entry in the queue, if it exists", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		queue.Enqueue("2")
+		queue.Enqueue("3")
+		index := queue.FindIndex("2")
+		entries := queue.Entries()
+
+		assert.Equal(t, 1, index)
+		assert.Equal(t, "2", entries[index])
 	})
 }
