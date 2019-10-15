@@ -77,4 +77,37 @@ func TestQueue(t *testing.T) {
 		assert.Equal(t, "2", entries[0])
 		assert.Equal(t, "3", entries[1])
 	})
+
+	t.Run("withdraw - does nothing if the queue is empty", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		withdrawnValue := queue.Withdraw("-1")
+		entries := queue.Entries()
+
+		assert.Equal(t, 0, len(entries))
+		assert.Nil(t, withdrawnValue)
+	})
+
+	t.Run("withdraw - removes the provided value from a singleton queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		withdrawnValue := queue.Withdraw("1")
+		entries := queue.Entries()
+
+		assert.Equal(t, 0, len(entries))
+		assert.Equal(t, "1", *withdrawnValue)
+	})
+
+	t.Run("withdraw - does nothing if the provided value is not present in the queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		withdrawnValue := queue.Withdraw("999")
+		entries := queue.Entries()
+
+		assert.Equal(t, 1, len(entries))
+		assert.Equal(t, "1", entries[0])
+		assert.Nil(t, withdrawnValue)
+	})
 }

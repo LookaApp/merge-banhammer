@@ -29,6 +29,38 @@ func (q *mergeQueue) Dequeue() *string {
 	return &dequeuedValue
 }
 
+func (q *mergeQueue) Withdraw(valueToWithdraw string) *string {
+	if q.Length() == 0 {
+		return nil
+	}
+
+	withdrawPosition := int(-1)
+
+	for position, enqueuedValue := range q.queue {
+		if enqueuedValue == valueToWithdraw {
+			withdrawPosition = position
+		}
+	}
+
+	if withdrawPosition == -1 {
+		return nil
+	}
+
+	withdrawnValue := q.queue[withdrawPosition]
+	var withdrawIndex int
+
+	if withdrawPosition+1 >= len(q.queue) {
+		withdrawIndex = 0
+	} else {
+		withdrawIndex = withdrawPosition + 1
+	}
+
+	q.queue = append(make([]string, 0, 12), q.queue[0:withdrawPosition]...)
+	q.queue = append(q.queue, q.queue[withdrawIndex:]...)
+
+	return &withdrawnValue
+}
+
 func (q *mergeQueue) Entries() []string {
 	return q.queue
 }
