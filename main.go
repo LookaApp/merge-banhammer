@@ -11,7 +11,7 @@ import (
 
 func main() {
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	notifier := mergeban.NewSlackNotifier()
+	notifier := mergeban.NewSlackNotifier(logger)
 
 	listenAddress := os.Getenv("MERGEBAN_LISTEN_ADDR")
 	if listenAddress == "" {
