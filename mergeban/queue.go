@@ -47,16 +47,22 @@ func (q *mergeQueue) Withdraw(valueToWithdraw string) *string {
 	}
 
 	withdrawnValue := q.queue[withdrawPosition]
-	var withdrawIndex int
+	empty := []string{}
+	var leadingValues, trailingValues []string
 
-	if withdrawPosition+1 >= len(q.queue) {
-		withdrawIndex = 0
+	if withdrawPosition == 0 {
+		leadingValues = empty
+		trailingValues = q.queue[1:]
+	} else if withdrawPosition == len(q.queue)-1 {
+		leadingValues = q.queue[0:withdrawPosition]
+		trailingValues = empty
 	} else {
-		withdrawIndex = withdrawPosition + 1
+		leadingValues = q.queue[0:withdrawPosition]
+		trailingValues = q.queue[withdrawPosition+1 : len(q.queue)]
 	}
 
-	q.queue = append(make([]string, 0, 12), q.queue[0:withdrawPosition]...)
-	q.queue = append(q.queue, q.queue[withdrawIndex:]...)
+	newQueue := append(make([]string, 0, 12), leadingValues...)
+	q.queue = append(newQueue, trailingValues...)
 
 	return &withdrawnValue
 }

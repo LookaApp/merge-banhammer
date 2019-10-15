@@ -110,4 +110,49 @@ func TestQueue(t *testing.T) {
 		assert.Equal(t, "1", entries[0])
 		assert.Nil(t, withdrawnValue)
 	})
+
+	t.Run("withdraw - can withdraw from the head of the queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		queue.Enqueue("2")
+		queue.Enqueue("3")
+		withdrawnValue := queue.Withdraw("1")
+		entries := queue.Entries()
+
+		assert.Equal(t, 2, len(entries))
+		assert.Equal(t, "1", *withdrawnValue)
+		assert.Equal(t, "2", entries[0])
+		assert.Equal(t, "3", entries[1])
+	})
+
+	t.Run("withdraw - can withdraw from the middle of the queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		queue.Enqueue("2")
+		queue.Enqueue("3")
+		withdrawnValue := queue.Withdraw("2")
+		entries := queue.Entries()
+
+		assert.Equal(t, 2, len(entries))
+		assert.Equal(t, "2", *withdrawnValue)
+		assert.Equal(t, "1", entries[0])
+		assert.Equal(t, "3", entries[1])
+	})
+
+	t.Run("withdraw - can withdraw from the end of the queue", func(t *testing.T) {
+		queue := mergeban.NewQueue()
+
+		queue.Enqueue("1")
+		queue.Enqueue("2")
+		queue.Enqueue("3")
+		withdrawnValue := queue.Withdraw("3")
+		entries := queue.Entries()
+
+		assert.Equal(t, 2, len(entries))
+		assert.Equal(t, "3", *withdrawnValue)
+		assert.Equal(t, "1", entries[0])
+		assert.Equal(t, "2", entries[1])
+	})
 }
