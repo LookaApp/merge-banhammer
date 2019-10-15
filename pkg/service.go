@@ -1,6 +1,7 @@
 package mergeban
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,9 +35,21 @@ func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
 
 	responseURL := r.FormValue("response_url")
 	userID := r.FormValue("user_id")
+	userName := r.FormValue("user_name")
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	_, err = w.Write([]byte(b.enqueueMerge(userID, responseURL)))
+	responseText := b.enqueueMerge(userID, responseURL, userName)
+	responsePayload := map[string]string{
+		"response_type": "in_channel",
+		"text":          responseText,
+	}
+	responseJSON, err := json.Marshal(responsePayload)
+	if err != nil {
+		b.logger.Printf("Failed to marshal response payload %v: %v\n", responsePayload, err)
+	}
+
+	_, err = w.Write(responseJSON)
 
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
@@ -51,8 +64,18 @@ func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.FormValue("user_id")
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
-	_, err = w.Write([]byte(b.withdrawMerge(userID)))
+	responseText := b.withdrawMerge(userID)
+	responsePayload := map[string]string{
+		"response_type": "in_channel",
+		"text":          responseText,
+	}
+	responseJSON, err := json.Marshal(responsePayload)
+	if err != nil {
+		b.logger.Printf("Failed to marshal response payload %v: %v\n", responsePayload, err)
+	}
+	_, err = w.Write(responseJSON)
 
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
@@ -76,13 +99,13 @@ func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (b *banService) enqueueMerge(userID string, responseURL string) string {
+func (b *banService) enqueueMerge(userID, responseURL, userName string) string {
 	originalLength := b.mergeQueue.Length()
 
 	b.mergeQueue.Enqueue(userID, responseURL)
 
 	if b.mergeQueue.Length() == 1 {
-		return "You have banned merges!"
+		return fmt.Sprintf("%s is waiting to merge!", userName)
 	} else if b.mergeQueue.Length() == originalLength {
 		usersCurrentPosition := b.mergeQueue.FindIndex(userID) + 1
 		return fmt.Sprintf("You are already in line! Your position: [%v/%v]\n", usersCurrentPosition, b.mergeQueue.Length())

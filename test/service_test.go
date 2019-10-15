@@ -31,7 +31,7 @@ func TestBanEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, 200, response.StatusCode)
-		assert.Equal(t, "You have banned merges!", string(responseBody))
+		assert.Contains(t, string(responseBody), "Stan Depain is waiting to merge!")
 	})
 
 	t.Run("/ban - queueing to acquire lock if it has already been taken", func(t *testing.T) {
@@ -49,7 +49,8 @@ func TestBanEndpoint(t *testing.T) {
 		responseBody2, _ := ioutil.ReadAll(response2.Body)
 
 		assert.Equal(t, 200, response2.StatusCode)
-		assert.Equal(t, "Hold up - someone else has banned merges. We'll message you when it's your turn to merge. Your position in line: [2/2]\n", string(responseBody2))
+		assert.Contains(t, string(responseBody2), "Hold up - someone else has banned merges. We'll message you when it's your turn to merge. Your position in line:")
+		assert.Contains(t, string(responseBody2), "2/2")
 	})
 
 	t.Run("/ban - preventing the same user from enqueuing twice", func(t *testing.T) {
@@ -70,7 +71,8 @@ func TestBanEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, 200, response.StatusCode)
-		assert.Equal(t, "You are already in line! Your position: [1/2]\n", string(responseBody))
+		assert.Contains(t, string(responseBody), "You are already in line! Your position:")
+		assert.Contains(t, string(responseBody), "1/2")
 	})
 }
 
@@ -88,7 +90,7 @@ func TestLiftEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
 		assert.Equal(t, 200, response.StatusCode)
-		assert.Equal(t, "You aren't in line!", string(responseBody))
+		assert.Contains(t, string(responseBody), "You aren't in line!")
 	})
 
 	t.Run("/lift - releases any locks held by this user", func(t *testing.T) {
@@ -110,7 +112,7 @@ func TestLiftEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(liftResponse.Body)
 
 		assert.Equal(t, 200, liftResponse.StatusCode)
-		assert.Equal(t, "You are no longer waiting to merge.", string(responseBody))
+		assert.Contains(t, string(responseBody), "You are no longer waiting to merge.")
 	})
 
 	t.Run("/lift - notifies the next user in line if the user lifting held the lock", func(t *testing.T) {
@@ -134,7 +136,7 @@ func TestLiftEndpoint(t *testing.T) {
 		responseBody, _ := ioutil.ReadAll(liftResponse.Body)
 
 		assert.Equal(t, 200, liftResponse.StatusCode)
-		assert.Equal(t, "You are no longer waiting to merge.", string(responseBody))
+		assert.Contains(t, string(responseBody), "You are no longer waiting to merge.")
 	})
 }
 
@@ -148,7 +150,7 @@ func createLiftRequest(userID string) (*httptest.ResponseRecorder, *http.Request
 }
 
 func createBanRequest(userID string) (*httptest.ResponseRecorder, *http.Request) {
-	requestBody := strings.NewReader(fmt.Sprintf("user_id=%v", userID))
+	requestBody := strings.NewReader(fmt.Sprintf("user_id=%v&user_name=Stan Depain", userID))
 	request := httptest.NewRequest("POST", "/ban", requestBody)
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
