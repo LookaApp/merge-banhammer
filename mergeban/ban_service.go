@@ -31,14 +31,18 @@ func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("user_id")
 
 	w.WriteHeader(200)
-	_, err = w.Write([]byte(b.EnqueueMerge(userID)))
+	_, err = w.Write([]byte(b.enqueueMerge(userID)))
 
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
 	}
 }
 
-func (b *banService) EnqueueMerge(userID string) string {
+func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	b.Ban(w, r)
+}
+
+func (b *banService) enqueueMerge(userID string) string {
 	queueLength := len(b.mergeQueue)
 
 	for position, enqueuedID := range b.mergeQueue {
