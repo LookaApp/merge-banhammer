@@ -10,15 +10,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"mergeban/pkg"
+	"mergeban/test/mock_mergeban"
 )
 
 func TestBanEndpoint(t *testing.T) {
 	t.Run("/ban - successfully acquiring initial lock", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateService(logger)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
 		w, request := createBanRequest("42")
 
 		banService.ServeHTTP(w, request)
@@ -30,8 +34,10 @@ func TestBanEndpoint(t *testing.T) {
 	})
 
 	t.Run("/ban - queueing to acquire lock if it has already been taken", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateService(logger)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 
@@ -45,8 +51,10 @@ func TestBanEndpoint(t *testing.T) {
 	})
 
 	t.Run("/ban - preventing the same user from enqueuing twice", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateService(logger)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 		w3, request3 := createBanRequest("23")
@@ -65,8 +73,10 @@ func TestBanEndpoint(t *testing.T) {
 
 func TestLiftEndpoint(t *testing.T) {
 	t.Run("/lift - warns when the lock is not held by this user", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateService(logger)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
 		w, request := createLiftRequest("42")
 
 		banService.ServeHTTP(w, request)
@@ -78,13 +88,33 @@ func TestLiftEndpoint(t *testing.T) {
 	})
 
 	t.Run("/lift - releases any locks held by this user", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateService(logger)
-
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
 		wBan, banRequest := createBanRequest("42")
 		wLift, liftRequest := createLiftRequest("42")
 
 		banService.ServeHTTP(wBan, banRequest)
+		banService.ServeHTTP(wLift, liftRequest)
+		liftResponse := wLift.Result()
+		responseBody, _ := ioutil.ReadAll(liftResponse.Body)
+
+		assert.Equal(t, 200, liftResponse.StatusCode)
+		assert.Equal(t, "You are no longer waiting to merge.", string(responseBody))
+	})
+
+	t.Run("/lift - notifies the next user in line if the user lifting held the lock", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
+		wBan, banRequest := createBanRequest("1")
+		wBan2, banRequest2 := createLiftRequest("2")
+		wLift, liftRequest := createLiftRequest("1")
+
+		banService.ServeHTTP(wBan, banRequest)
+		banService.ServeHTTP(wBan2, banRequest2)
 		banService.ServeHTTP(wLift, liftRequest)
 		liftResponse := wLift.Result()
 		responseBody, _ := ioutil.ReadAll(liftResponse.Body)

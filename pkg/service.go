@@ -10,12 +10,14 @@ import (
 type banService struct {
 	logger     *log.Logger
 	mergeQueue *mergeQueue
+	notifier   Notifier
 }
 
-func CreateService(logger *log.Logger) *banService {
+func CreateService(logger *log.Logger, notifier Notifier) *banService {
 	return &banService{
 		logger:     logger,
 		mergeQueue: NewQueue(),
+		notifier:   notifier,
 	}
 }
 
