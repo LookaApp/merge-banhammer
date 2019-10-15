@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 )
 
 type banService struct {
@@ -12,9 +11,9 @@ type banService struct {
 	mergeQueue []string
 }
 
-func CreateBanService() *banService {
+func CreateBanService(logger *log.Logger) *banService {
 	return &banService{
-		logger:     log.New(os.Stdout, "", log.Ldate|log.Ltime),
+		logger:     logger,
 		mergeQueue: make([]string, 0, 12),
 	}
 }

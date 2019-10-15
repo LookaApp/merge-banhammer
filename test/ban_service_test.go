@@ -3,8 +3,10 @@ package test
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -15,7 +17,8 @@ import (
 
 func TestBanEndpoint(t *testing.T) {
 	t.Run("/ban - successfully acquiring initial lock", func(t *testing.T) {
-		banService := mergeban.CreateBanService()
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		banService := mergeban.CreateBanService(logger)
 		w, request := createBanRequest("42")
 
 		banService.Ban(w, request)
@@ -27,7 +30,8 @@ func TestBanEndpoint(t *testing.T) {
 	})
 
 	t.Run("/ban - queueing to acquire lock if it has already been taken", func(t *testing.T) {
-		banService := mergeban.CreateBanService()
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		banService := mergeban.CreateBanService(logger)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 
@@ -41,7 +45,8 @@ func TestBanEndpoint(t *testing.T) {
 	})
 
 	t.Run("/ban - preventing the same user from enqueuing twice", func(t *testing.T) {
-		banService := mergeban.CreateBanService()
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		banService := mergeban.CreateBanService(logger)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 		w3, request3 := createBanRequest("23")
