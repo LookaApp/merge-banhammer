@@ -32,10 +32,11 @@ func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
 		b.logger.Printf("Failed to parse form data from POST request: %v\n", err)
 	}
 
+	responseURL := r.FormValue("response_url")
 	userID := r.FormValue("user_id")
 
 	w.WriteHeader(200)
-	_, err = w.Write([]byte(b.enqueueMerge(userID)))
+	_, err = w.Write([]byte(b.enqueueMerge(userID, responseURL)))
 
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
@@ -75,10 +76,10 @@ func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (b *banService) enqueueMerge(userID string) string {
+func (b *banService) enqueueMerge(userID string, responseURL string) string {
 	originalLength := b.mergeQueue.Length()
 
-	b.mergeQueue.Enqueue(userID)
+	b.mergeQueue.Enqueue(userID, responseURL)
 
 	if b.mergeQueue.Length() == 1 {
 		return "You have banned merges!"
@@ -91,10 +92,18 @@ func (b *banService) enqueueMerge(userID string) string {
 }
 
 func (b *banService) withdrawMerge(userID string) string {
-	withdrawnUserID := b.mergeQueue.Withdraw(userID)
+	positionOfWithdrawingUser := b.mergeQueue.FindIndex(userID)
 
-	if withdrawnUserID == nil {
+	if positionOfWithdrawingUser == -1 {
 		return "You aren't in line!"
+	} else if positionOfWithdrawingUser == 0 {
+		b.mergeQueue.Dequeue()
+		nextInLine := b.mergeQueue.Peek()
+		if nextInLine != nil {
+			b.notifier.Notify(nextInLine.ResponseURL, "It's your turn to merge!")
+		}
+	} else {
+		b.mergeQueue.Withdraw(userID)
 	}
 
 	return "You are no longer waiting to merge."

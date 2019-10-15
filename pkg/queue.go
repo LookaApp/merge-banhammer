@@ -1,54 +1,61 @@
 package mergeban
 
 type mergeQueue struct {
-	queue []string
+	queue []mergeQueueEntry
+}
+
+type mergeQueueEntry struct {
+	ResponseURL string
+	UserID      string
 }
 
 func NewQueue() *mergeQueue {
-	return &mergeQueue{queue: make([]string, 0, 12)}
+	return &mergeQueue{queue: make([]mergeQueueEntry, 0, 12)}
 }
 
-func (q *mergeQueue) Enqueue(valueToEnqueue string) {
+func (q *mergeQueue) Enqueue(userIDToEnqueue string, responseURL string) {
 	for _, enqueuedValue := range q.queue {
-		if enqueuedValue == valueToEnqueue {
+		if enqueuedValue.UserID == userIDToEnqueue {
 			return
 		}
 	}
 
-	q.queue = append(q.queue, valueToEnqueue)
+	q.queue = append(q.queue, mergeQueueEntry{
+		ResponseURL: responseURL,
+		UserID:      userIDToEnqueue,
+	})
 }
 
-func (q *mergeQueue) Dequeue() *string {
+func (q *mergeQueue) Dequeue() *mergeQueueEntry {
 	if q.Length() == 0 {
 		return nil
 	}
 
 	dequeuedValue := q.queue[0]
-	q.queue = append(make([]string, 0, 12), q.queue[1:]...)
+	q.queue = append(make([]mergeQueueEntry, 0, 12), q.queue[1:]...)
 
 	return &dequeuedValue
 }
 
-func (q *mergeQueue) Withdraw(valueToWithdraw string) *string {
+func (q *mergeQueue) Withdraw(userIDToWithdraw string) int {
 	if q.Length() == 0 {
-		return nil
+		return -1
 	}
 
 	withdrawPosition := int(-1)
 
 	for position, enqueuedValue := range q.queue {
-		if enqueuedValue == valueToWithdraw {
+		if enqueuedValue.UserID == userIDToWithdraw {
 			withdrawPosition = position
 		}
 	}
 
 	if withdrawPosition == -1 {
-		return nil
+		return -1
 	}
 
-	withdrawnValue := q.queue[withdrawPosition]
-	empty := []string{}
-	var leadingValues, trailingValues []string
+	empty := []mergeQueueEntry{}
+	var leadingValues, trailingValues []mergeQueueEntry
 
 	if withdrawPosition == 0 {
 		leadingValues = empty
@@ -61,15 +68,15 @@ func (q *mergeQueue) Withdraw(valueToWithdraw string) *string {
 		trailingValues = q.queue[withdrawPosition+1 : len(q.queue)]
 	}
 
-	newQueue := append(make([]string, 0, 12), leadingValues...)
+	newQueue := append(make([]mergeQueueEntry, 0, 12), leadingValues...)
 	q.queue = append(newQueue, trailingValues...)
 
-	return &withdrawnValue
+	return withdrawPosition
 }
 
-func (q *mergeQueue) FindIndex(needle string) int {
+func (q *mergeQueue) FindIndex(userID string) int {
 	for index, enqueuedValue := range q.queue {
-		if enqueuedValue == needle {
+		if enqueuedValue.UserID == userID {
 			return index
 		}
 	}
@@ -77,8 +84,22 @@ func (q *mergeQueue) FindIndex(needle string) int {
 	return -1
 }
 
-func (q *mergeQueue) Entries() []string {
-	return q.queue
+func (q *mergeQueue) Peek() *mergeQueueEntry {
+	if q.Length() == 0 {
+		return nil
+	}
+
+	return &q.queue[0]
+}
+
+func (q *mergeQueue) UserIDs() []string {
+	var acc []string
+
+	for _, entry := range q.queue {
+		acc = append(acc, entry.UserID)
+	}
+
+	return acc
 }
 
 func (q *mergeQueue) Length() int {
