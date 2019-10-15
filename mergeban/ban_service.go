@@ -11,7 +11,7 @@ type banService struct {
 	mergeQueue []string
 }
 
-func CreateBanService(logger *log.Logger) *banService {
+func CreateService(logger *log.Logger) *banService {
 	return &banService{
 		logger:     logger,
 		mergeQueue: make([]string, 0, 12),

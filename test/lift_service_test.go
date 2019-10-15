@@ -18,7 +18,7 @@ import (
 func TestLiftEndpoint(t *testing.T) {
 	t.Run("/lift - successfully releasing a held lock", func(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateBanService(logger)
+		banService := mergeban.CreateService(logger)
 		w, request := createLiftRequest("42")
 
 		banService.Lift(w, request)

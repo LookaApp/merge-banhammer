@@ -18,10 +18,10 @@ import (
 func TestBanEndpoint(t *testing.T) {
 	t.Run("/ban - successfully acquiring initial lock", func(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateBanService(logger)
+		banService := mergeban.CreateService(logger)
 		w, request := createBanRequest("42")
 
-		banService.Ban(w, request)
+		banService.ServeHTTP(w, request)
 		response := w.Result()
 		responseBody, _ := ioutil.ReadAll(response.Body)
 
@@ -31,12 +31,12 @@ func TestBanEndpoint(t *testing.T) {
 
 	t.Run("/ban - queueing to acquire lock if it has already been taken", func(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateBanService(logger)
+		banService := mergeban.CreateService(logger)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 
-		banService.Ban(w, request)
-		banService.Ban(w2, request2)
+		banService.ServeHTTP(w, request)
+		banService.ServeHTTP(w2, request2)
 		response2 := w2.Result()
 		responseBody2, _ := ioutil.ReadAll(response2.Body)
 
@@ -46,14 +46,14 @@ func TestBanEndpoint(t *testing.T) {
 
 	t.Run("/ban - preventing the same user from enqueuing twice", func(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		banService := mergeban.CreateBanService(logger)
+		banService := mergeban.CreateService(logger)
 		w, request := createBanRequest("23")
 		w2, request2 := createBanRequest("42")
 		w3, request3 := createBanRequest("23")
 
-		banService.Ban(w, request)
-		banService.Ban(w2, request2)
-		banService.Ban(w3, request3)
+		banService.ServeHTTP(w, request)
+		banService.ServeHTTP(w2, request2)
+		banService.ServeHTTP(w3, request3)
 		response := w3.Result()
 
 		responseBody, _ := ioutil.ReadAll(response.Body)

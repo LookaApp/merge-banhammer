@@ -12,7 +12,7 @@ import (
 func main() {
 	listenAddress := "localhost:1337"
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	banService := mergeban.CreateBanService(logger)
+	banService := mergeban.CreateService(logger)
 
 	httpServer := http.Server{
 		ErrorLog: logger,
