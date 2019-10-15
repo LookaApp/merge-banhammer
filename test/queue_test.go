@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"mergeban/mergeban"
+	"mergeban/pkg"
 )
 
 func TestQueue(t *testing.T) {

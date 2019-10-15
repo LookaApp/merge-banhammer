@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"mergeban/mergeban"
+	"mergeban/pkg"
 )
 
 func TestBanEndpoint(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"mergeban/mergeban"
+	"mergeban/pkg"
 )
 
 func main() {
