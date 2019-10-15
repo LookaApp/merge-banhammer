@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type banService struct {
@@ -47,14 +48,27 @@ func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 
-	_, err = w.Write([]byte("Hello world!"))
+	_, err = w.Write([]byte("You do not have the banhammer!"))
 	if err != nil {
 		b.logger.Printf("Failed to write response body: %v\n", err)
 	}
 }
 
 func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b.Ban(w, r)
+	path := r.URL.Path
+
+	if strings.Contains(path, "ban") {
+		b.Ban(w, r)
+	} else if strings.Contains(path, "lift") {
+		b.Lift(w, r)
+	} else {
+		w.WriteHeader(404)
+
+		_, err := w.Write([]byte("Unrecognized command"))
+		if err != nil {
+			b.logger.Printf("Failed to write 404 response body: %v\n", err)
+		}
+	}
 }
 
 func (b *banService) enqueueMerge(userID string) string {
