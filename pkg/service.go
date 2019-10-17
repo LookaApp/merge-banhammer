@@ -62,7 +62,7 @@ func (b *banService) ListBans() ([]byte, error) {
 		}
 	}
 
-	return []byte(responseBuilder.String()), nil
+	return marshalResponse(responseBuilder.String())
 }
 
 func (b *banService) Lift(userID string) ([]byte, error) {
