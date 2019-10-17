@@ -42,9 +42,27 @@ func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
 }
 
 func (b *banService) ListBans() ([]byte, error) {
-	responseText := "Yay! There is no one currently waiting to merge."
+	if b.mergeQueue.Length() == 0 {
+		return marshalResponse("Yay! There is no one currently waiting to merge.")
+	}
 
-	return marshalResponse(responseText)
+	responseBuilder := strings.Builder{}
+
+	_, err := responseBuilder.Write([]byte("The following people are waiting to merge:\n"))
+	if err != nil {
+		return []byte{}, fmt.Errorf("Failed to append header text to /bans response: %v\n", err)
+	}
+
+	enqueuedUserNames := b.mergeQueue.UserNames()
+
+	for position, userName := range enqueuedUserNames {
+		_, err = responseBuilder.Write([]byte(fmt.Sprintf("\t%d) %s\n", position+1, userName)))
+		if err != nil {
+			return []byte{}, fmt.Errorf("Failed to append enqueued user to /bans response: %v\n", err)
+		}
+	}
+
+	return []byte(responseBuilder.String()), nil
 }
 
 func (b *banService) Lift(userID string) ([]byte, error) {

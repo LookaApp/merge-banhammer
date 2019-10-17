@@ -155,23 +155,27 @@ func TestLiftEndpoint(t *testing.T) {
 		assert.Contains(t, string(responseBody), "Yay! There is no one currently waiting to merge.")
 	})
 
-	/*
-		t.Run("/bans - responds with a list users waiting to merge if the queue is populated", func(t *testing.T) {
-			mockCtrl := gomock.NewController(t)
-			defer mockCtrl.Finish()
-			logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
-			notifier := mock_mergeban.NewMockNotifier(mockCtrl)
-			banService := mergeban.CreateService(logger, notifier)
-			w, request := createListBansRequest()
+	t.Run("/bans - responds with a list users waiting to merge if the queue is populated", func(t *testing.T) {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+		banService := mergeban.CreateService(logger, notifier)
+		w, request := createBanRequest("1", "Alice")
+		w2, request2 := createBanRequest("2", "Bob")
+		w3, request3 := createBanRequest("3", "Charlie")
+		wList, requestList := createListBansRequest()
 
-			banService.ServeHTTP(w, request)
-			response := w.Result()
-			responseBody, _ := ioutil.ReadAll(response.Body)
+		banService.ServeHTTP(w, request)
+		banService.ServeHTTP(w2, request2)
+		banService.ServeHTTP(w3, request3)
+		banService.ServeHTTP(wList, requestList)
+		response := wList.Result()
+		responseBody, _ := ioutil.ReadAll(response.Body)
 
-			assert.Equal(t, 200, response.StatusCode)
-			assert.Contains(t, string(responseBody), "Yay! There is no one currently waiting to merge.")
-		})
-	*/
+		assert.Equal(t, 200, response.StatusCode)
+		assert.Contains(t, string(responseBody), "The following people are waiting to merge:\n\t1) Alice\n\t2) Bob\n\t3) Charlie")
+	})
 }
 
 func createLiftRequest(userID string) (*httptest.ResponseRecorder, *http.Request) {
