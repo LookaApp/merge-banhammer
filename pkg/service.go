@@ -22,8 +22,7 @@ func CreateService(logger *log.Logger, notifier Notifier) *banService {
 	}
 }
 
-func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
-	responseText := b.enqueueMerge(userID, responseURL, userName)
+func marshalResponse(responseText string) ([]byte, error) {
 	responsePayload := map[string]string{
 		"response_type": "in_channel",
 		"text":          responseText,
@@ -36,18 +35,16 @@ func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
 	return responseJSON, nil
 }
 
+func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
+	responseText := b.enqueueMerge(userID, responseURL, userName)
+
+	return marshalResponse(responseText)
+}
+
 func (b *banService) Lift(userID string) ([]byte, error) {
 	responseText := b.withdrawMerge(userID)
-	responsePayload := map[string]string{
-		"response_type": "in_channel",
-		"text":          responseText,
-	}
-	responseJSON, err := json.Marshal(responsePayload)
-	if err != nil {
-		return []byte{}, err
-	}
 
-	return responseJSON, nil
+	return marshalResponse(responseText)
 }
 
 func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
