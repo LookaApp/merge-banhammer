@@ -41,6 +41,12 @@ func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
 	return marshalResponse(responseText)
 }
 
+func (b *banService) ListBans() ([]byte, error) {
+	responseText := "Yay! There is no one currently waiting to merge."
+
+	return marshalResponse(responseText)
+}
+
 func (b *banService) Lift(userID string) ([]byte, error) {
 	responseText := b.withdrawMerge(userID)
 
@@ -58,10 +64,26 @@ func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	userName := r.FormValue("user_name")
 
 	path := r.URL.Path
-	if strings.Contains(path, "ban") {
+	if path == "/ban" {
 		w.Header().Add("Content-Type", "application/json")
 
 		responsePayload, err := b.Ban(responseURL, userID, userName)
+		if err != nil {
+			b.logger.Printf("Failed to handle ban request: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		_, err = w.Write(responsePayload)
+		if err != nil {
+			b.logger.Printf("Failed to write response body: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		w.WriteHeader(200)
+	} else if path == "/bans" {
+		w.Header().Add("Content-Type", "application/json")
+
+		responsePayload, err := b.ListBans()
 		if err != nil {
 			b.logger.Printf("Failed to handle ban request: %v\n", err)
 			w.WriteHeader(500)
