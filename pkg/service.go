@@ -22,11 +22,6 @@ func CreateService(logger *log.Logger, notifier Notifier) *banService {
 	}
 }
 
-type BanHammer interface {
-	Ban(w http.ResponseWriter, r *http.Request)
-	Lift(w http.ResponseWriter, r *http.Request)
-}
-
 func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
 	responseText := b.enqueueMerge(userID, responseURL, userName)
 	responsePayload := map[string]string{
