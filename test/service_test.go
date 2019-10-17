@@ -24,7 +24,7 @@ func TestBanEndpoint(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
 		banService := mergeban.CreateService(logger, notifier)
-		w, request := createBanRequest("42")
+		w, request := createBanRequest("42", "Stan Depain")
 
 		banService.ServeHTTP(w, request)
 		response := w.Result()
@@ -40,8 +40,8 @@ func TestBanEndpoint(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
 		banService := mergeban.CreateService(logger, notifier)
-		w, request := createBanRequest("23")
-		w2, request2 := createBanRequest("42")
+		w, request := createBanRequest("23", "Alice")
+		w2, request2 := createBanRequest("42", "Bob")
 
 		banService.ServeHTTP(w, request)
 		banService.ServeHTTP(w2, request2)
@@ -59,9 +59,9 @@ func TestBanEndpoint(t *testing.T) {
 		logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		notifier := mock_mergeban.NewMockNotifier(mockCtrl)
 		banService := mergeban.CreateService(logger, notifier)
-		w, request := createBanRequest("23")
-		w2, request2 := createBanRequest("42")
-		w3, request3 := createBanRequest("23")
+		w, request := createBanRequest("23", "Alice")
+		w2, request2 := createBanRequest("42", "Bob")
+		w3, request3 := createBanRequest("23", "Charlie")
 
 		banService.ServeHTTP(w, request)
 		banService.ServeHTTP(w2, request2)
@@ -154,6 +154,24 @@ func TestLiftEndpoint(t *testing.T) {
 		assert.Equal(t, 200, response.StatusCode)
 		assert.Contains(t, string(responseBody), "Yay! There is no one currently waiting to merge.")
 	})
+
+	/*
+		t.Run("/bans - responds with a list users waiting to merge if the queue is populated", func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
+			logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+			notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+			banService := mergeban.CreateService(logger, notifier)
+			w, request := createListBansRequest()
+
+			banService.ServeHTTP(w, request)
+			response := w.Result()
+			responseBody, _ := ioutil.ReadAll(response.Body)
+
+			assert.Equal(t, 200, response.StatusCode)
+			assert.Contains(t, string(responseBody), "Yay! There is no one currently waiting to merge.")
+		})
+	*/
 }
 
 func createLiftRequest(userID string) (*httptest.ResponseRecorder, *http.Request) {
@@ -165,8 +183,8 @@ func createLiftRequest(userID string) (*httptest.ResponseRecorder, *http.Request
 	return w, request
 }
 
-func createBanRequest(userID string) (*httptest.ResponseRecorder, *http.Request) {
-	requestBody := strings.NewReader(fmt.Sprintf("user_id=%v&user_name=Stan Depain", userID))
+func createBanRequest(userID, userName string) (*httptest.ResponseRecorder, *http.Request) {
+	requestBody := strings.NewReader(fmt.Sprintf("user_id=%v&user_name=%v", userID, userName))
 	request := httptest.NewRequest("POST", "/ban", requestBody)
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
