@@ -27,7 +27,35 @@ type BanHammer interface {
 	Lift(w http.ResponseWriter, r *http.Request)
 }
 
-func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
+func (b *banService) Ban(responseURL, userID, userName string) ([]byte, error) {
+	responseText := b.enqueueMerge(userID, responseURL, userName)
+	responsePayload := map[string]string{
+		"response_type": "in_channel",
+		"text":          responseText,
+	}
+	responseJSON, err := json.Marshal(responsePayload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return responseJSON, nil
+}
+
+func (b *banService) Lift(userID string) ([]byte, error) {
+	responseText := b.withdrawMerge(userID)
+	responsePayload := map[string]string{
+		"response_type": "in_channel",
+		"text":          responseText,
+	}
+	responseJSON, err := json.Marshal(responsePayload)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return responseJSON, nil
+}
+
+func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		b.logger.Printf("Failed to parse form data from POST request: %v\n", err)
@@ -37,58 +65,39 @@ func (b *banService) Ban(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("user_id")
 	userName := r.FormValue("user_name")
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	responseText := b.enqueueMerge(userID, responseURL, userName)
-	responsePayload := map[string]string{
-		"response_type": "in_channel",
-		"text":          responseText,
-	}
-	responseJSON, err := json.Marshal(responsePayload)
-	if err != nil {
-		b.logger.Printf("Failed to marshal response payload %v: %v\n", responsePayload, err)
-	}
-
-	_, err = w.Write(responseJSON)
-
-	if err != nil {
-		b.logger.Printf("Failed to write response body: %v\n", err)
-	}
-}
-
-func (b *banService) Lift(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		b.logger.Printf("Failed to parse form data from POST request: %v\n", err)
-	}
-
-	userID := r.FormValue("user_id")
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(200)
-	responseText := b.withdrawMerge(userID)
-	responsePayload := map[string]string{
-		"response_type": "in_channel",
-		"text":          responseText,
-	}
-	responseJSON, err := json.Marshal(responsePayload)
-	if err != nil {
-		b.logger.Printf("Failed to marshal response payload %v: %v\n", responsePayload, err)
-	}
-	_, err = w.Write(responseJSON)
-
-	if err != nil {
-		b.logger.Printf("Failed to write response body: %v\n", err)
-	}
-}
-
-func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-
 	if strings.Contains(path, "ban") {
-		b.Ban(w, r)
+		w.Header().Add("Content-Type", "application/json")
+
+		responsePayload, err := b.Ban(responseURL, userID, userName)
+		if err != nil {
+			b.logger.Printf("Failed to handle ban request: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		_, err = w.Write(responsePayload)
+		if err != nil {
+			b.logger.Printf("Failed to write response body: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		w.WriteHeader(200)
 	} else if strings.Contains(path, "lift") {
-		b.Lift(w, r)
+		w.Header().Add("Content-Type", "application/json")
+
+		responsePayload, err := b.Lift(userID)
+		if err != nil {
+			b.logger.Printf("Failed to handle lift request: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		_, err = w.Write(responsePayload)
+		if err != nil {
+			b.logger.Printf("Failed to write response body: %v\n", err)
+			w.WriteHeader(500)
+		}
+
+		w.WriteHeader(200)
 	} else {
 		w.WriteHeader(404)
 
