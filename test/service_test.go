@@ -138,6 +138,24 @@ func TestLiftEndpoint(t *testing.T) {
 		assert.Equal(t, 200, liftResponse.StatusCode)
 		assert.Contains(t, string(responseBody), "You are no longer waiting to merge.")
 	})
+
+	/*
+		t.Run("/bans - responds with a list of no users if the queue is empty", func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
+			logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+			notifier := mock_mergeban.NewMockNotifier(mockCtrl)
+			banService := mergeban.CreateService(logger, notifier)
+			w, request := createListBansRequest()
+
+			banService.ServeHTTP(w, request)
+			response := w.Result()
+			responseBody, _ := ioutil.ReadAll(response.Body)
+
+			assert.Equal(t, 200, response.StatusCode)
+			assert.Contains(t, string(responseBody), "Yay! There is no one currently waiting to merge.")
+		})
+	*/
 }
 
 func createLiftRequest(userID string) (*httptest.ResponseRecorder, *http.Request) {
@@ -161,6 +179,16 @@ func createBanRequest(userID string) (*httptest.ResponseRecorder, *http.Request)
 func createBanRequestWithResponseURL(userID string, responseURL string) (*httptest.ResponseRecorder, *http.Request) {
 	requestBody := strings.NewReader(fmt.Sprintf("user_id=%v&response_url=%v", userID, responseURL))
 	request := httptest.NewRequest("POST", "/ban", requestBody)
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	w := httptest.NewRecorder()
+
+	return w, request
+}
+
+func createListBansRequest() (*httptest.ResponseRecorder, *http.Request) {
+	requestBody := strings.NewReader("")
+	request := httptest.NewRequest("POST", "/bans", requestBody)
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	w := httptest.NewRecorder()

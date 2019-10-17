@@ -103,7 +103,7 @@ func (b *banService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (b *banService) enqueueMerge(userID, responseURL, userName string) string {
 	originalLength := b.mergeQueue.Length()
 
-	b.mergeQueue.Enqueue(userID, responseURL)
+	b.mergeQueue.Enqueue(userID, userName, responseURL)
 
 	if b.mergeQueue.Length() == 1 {
 		return fmt.Sprintf("%s is waiting to merge!", userName)

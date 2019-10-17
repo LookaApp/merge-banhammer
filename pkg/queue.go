@@ -7,13 +7,14 @@ type mergeQueue struct {
 type mergeQueueEntry struct {
 	ResponseURL string
 	UserID      string
+	UserName    string
 }
 
 func NewQueue() *mergeQueue {
 	return &mergeQueue{queue: make([]mergeQueueEntry, 0, 12)}
 }
 
-func (q *mergeQueue) Enqueue(userIDToEnqueue string, responseURL string) {
+func (q *mergeQueue) Enqueue(userIDToEnqueue, userNameToEnqueue, responseURL string) {
 	for _, enqueuedValue := range q.queue {
 		if enqueuedValue.UserID == userIDToEnqueue {
 			return
@@ -23,6 +24,7 @@ func (q *mergeQueue) Enqueue(userIDToEnqueue string, responseURL string) {
 	q.queue = append(q.queue, mergeQueueEntry{
 		ResponseURL: responseURL,
 		UserID:      userIDToEnqueue,
+		UserName:    userNameToEnqueue,
 	})
 }
 
@@ -97,6 +99,16 @@ func (q *mergeQueue) UserIDs() []string {
 
 	for _, entry := range q.queue {
 		acc = append(acc, entry.UserID)
+	}
+
+	return acc
+}
+
+func (q *mergeQueue) UserNames() []string {
+	var acc []string
+
+	for _, entry := range q.queue {
+		acc = append(acc, entry.UserName)
 	}
 
 	return acc
